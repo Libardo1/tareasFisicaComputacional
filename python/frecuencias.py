@@ -4,12 +4,7 @@ import sys, string, os
 ar= sys.argv[1]
 infile=open(ar)
 text= infile.readlines()
-#text=u(text)
 infile.close()
-a=0
-b=0
-c=0
-d=0
 
 # se crea la biblioteca de cada libro con los caracter
 biblioteca = []
@@ -40,6 +35,3 @@ grabado=open("frecuencias_"+ar, "w")
 for d in range(ssize):
     grabado.write("%s %d\n"%(biblioteca[d], frecuencia[d]))
 grabado.close()
-
-
-
