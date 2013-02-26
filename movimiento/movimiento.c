@@ -1,6 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
  
+void abrir (char *filename);
+void count (FILE *archivo);
+float *load(FILE *data,int *nx, int *ny);
+float *transpose(float *matriz, int *nx, int *ny);
+void print(float *m, int *nx, int *ny);
+
 int main (int argc, char **argv){
 
   float *matriz;
@@ -11,22 +17,25 @@ int main (int argc, char **argv){
   int test;
   char line;
 
-  /*abrir(argv[0]);
+  abrir(argv[0]);
+
   count(data);
-  *matriz=load(*data, *nx,*ny);
-  *transpuesta=transpose(matriz);
-  */
+
+  *matriz=load(data,nx,ny);
+
+  *transpuesta=transpose(matriz, nx, ny);
+
+  print(matriz,nx,ny);
 
   return 0;
 }
 
 
 /* abrir y guardar el archivo*/
-FILE abrir(char *filename){
+void abrir(char *filename){
   FILE *data;
   data = fopen(filename, "r");
-  close(filename);
-}
+  close(filename);}
 
 
 /* funcion que cuenta las filas y columnas*/
@@ -50,7 +59,7 @@ float *load(FILE *data,int *nx, int *ny){
     {
       for (i=0; i<(*nx); i++)
     {
-      fscanf(data, "%d %d",array[i+j] ,array[i+j]);
+      fscanf(data, "%f %f",array[i+j] ,array[i+j]);
     }
     }
   return array;
@@ -73,4 +82,18 @@ float *transpose(float *matriz, int *nx, int *ny){
     }
   }
   return m;
+}
+
+/* funcion que imprime una matriz*/
+void print(float *m, int *nx, int *ny){
+  int i,j,pos;
+  fprintf(stdout, "\n");
+  for(i=0;i<*nx;i++){
+    for(j=0;j<*ny;j++){
+      pos = i + (*nx * j);
+      fprintf(stdout, " %f ",m[pos]);
+    }
+    fprintf(stdout, "\n");
+  }
+  fprintf(stdout, "\n");
 }
