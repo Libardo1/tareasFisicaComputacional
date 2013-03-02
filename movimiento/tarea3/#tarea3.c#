@@ -20,11 +20,11 @@ int main(int argc, char **argv){
   // diferenciar datos
   gsl_vector *M=gsl_vector_alloc(y);
   gsl_vector *Y=gsl_vector_alloc(y);
-
+  
   gsl_matrix_get_col(*M, *P,1);
   gsl_matrix_get_col(*Y, *P,0);
   
-
+  
   // operar los elementos de la matriz M para obtener la matriz X de datos
   
   gsl_matrix *X= gsl_matrix_alloc(y,3);
@@ -45,20 +45,20 @@ int main(int argc, char **argv){
       }
     }
   }
-
+  
   // hacer la transpuesta de la matriz X, se crea XT
   
   gsl_matrix *XT= gsl_matrix_alloc(3,y);
   gsl_matrix_transpose_mencpy(*XT,*X);
   
-
+  
   // se multiplican las matrices creando una nueva matrix PRO
-
+  
   gsl_matrix *PRO= gsl_matrix_alloc(y,y);
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, A, B, 0.0, C); 
-
+  
   // sacar la inversa de X*XT creando matriz INV  
-    
+  
   return 0;
 }
 
