@@ -6,23 +6,22 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_linalg.h>
 
-void opendata(char *filename);
-void countdata(FILE *data);
+FILE * opendata(char *filename);
+void countdata(FILE *data, int *n_x, int *n_y);
 double *loaddata(FILE *data, size_t x, size_t y);
 
 int main(int argc, char **argv){
   
   FILE *data;
   double *matriz;
-  size_t x,y,i,j;
-  opendata(argv[1]);
-  countdata(data);
-  matriz =loaddata(data,x,y);
-  
-  if(!(matriz = malloc(sizeof(float)*x *y))){
-    fprintf(stderr, "Problem with memory allocation");
-    exit(1);
-  }
+  int x,y,i,j;
+
+  data = opendata(argv[1]);
+  countdata(data, &x, &y);
+  printf("y = %d x = %d\n", y, x);
+
+  matriz = loaddata(data,x,y);
+
 
  //hacer la matriz provisional
  /* gsl_matrix *P=gsl_matrix_alloc(y,x);
@@ -95,38 +94,46 @@ int main(int argc, char **argv){
 
 /*cargar el array*/
 double *loaddata(FILE* data, size_t x, size_t y){
-  int i,j;
+  int j;
   double *array;
+  float a,b;
+
+  
+  if(!(array = malloc(sizeof(double)*x *y))){
+    fprintf(stderr, "Problem with memory allocation");
+    exit(1);
+  }
+
   for(j=0;j<y; j++)
     {
-      for(i=0;i<x;i++){
-	float *a,*b;
-	fscanf(data, "%f %f \n",a,b);
-	array[i+j]=(double) *a; 
-	array[i+j]=(double) *b;
-      }
+	fscanf(data, "%f %f \n",&a,&b);
+	array[x*j + 0]=(double) a; 
+	array[x*j + 1]=(double) b;
     }
   return array;
 }
 
 /* abrir el archivo y guardar el archivo */
-void opendata(char *filename){
+FILE * opendata(char *filename){
   FILE *data;
   data =fopen(filename, "r");
   close(filename);
+  return data;
 }
 
 /* contar el numero de filas y columnas del archivo*/
-void countdata(FILE *data){
+void countdata(FILE *data, int *n_x, int *n_y){
   int x=0, y=0, test;
   char line;
   float num;
   char text[250];
-  do{test= fscanf(data, "/n", &line); 
-    if(test!=EOF){
+  do{
+    test = fgetc(data); 
+    if(test=='\n'){
       y++;
     }
   }while(test!=EOF); 
-  x=2;
+  *n_x = 2;
+  *n_y = y;
 }
 
