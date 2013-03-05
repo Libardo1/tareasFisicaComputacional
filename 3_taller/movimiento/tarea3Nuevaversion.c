@@ -8,7 +8,7 @@
 
 FILE * opendata(char *filename);
 void countdata(FILE *data, int *n_x, int *n_y);
-double *loaddata(FILE *data, size_t x, size_t y);
+double *loaddata(FILE *data, int x, int y);
 
 int main(int argc, char **argv){
   
@@ -18,16 +18,10 @@ int main(int argc, char **argv){
 
   data = opendata(argv[1]);
   countdata(data, &x, &y);
-  printf("y = %d x = %d\n", y, x);
-
-  matriz = loaddata(data,x,y);
-
-
- //hacer la matriz provisional
- /* gsl_matrix *P=gsl_matrix_alloc(y,x);
-    gsl_matrix_fscanf(data, P);*/
   
 
+  matriz = loaddata(data,x,y);
+  
   gsl_matrix_view P =gsl_matrix_view_array(matriz,y,x);
   // diferenciar datos
   gsl_vector *M=gsl_vector_alloc(y);
@@ -36,7 +30,7 @@ int main(int argc, char **argv){
   gsl_matrix_get_col(Y, &P.matrix,0);
   
   // operar los elementos de la matriz M para obtener la matriz X de datos
-  gsl_matrix *X= gsl_matrix_alloc(y,x);
+  gsl_matrix *X= gsl_matrix_alloc(y,3);
   for(i=0;i<3;i++){
     for(j=0;j<y;j++){
       if(i==0){
@@ -53,19 +47,17 @@ int main(int argc, char **argv){
       }
     }
   }
-  
   // hacer la transpuesta de la matriz X, se crea XT
-  gsl_matrix *XT= gsl_matrix_alloc(x,y);
+  gsl_matrix *XT= gsl_matrix_alloc(3,y);
   gsl_matrix_transpose_memcpy(XT,X);
   
   // se multiplican las matrices creando una nueva matrix PRO
   gsl_matrix *PRO= gsl_matrix_alloc(y,y);
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, *XT, *X, 0.0, *PRO); 
-  /* gsl_cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, )*/
   
   // sacar la inversa de X*XT (PRO) creando matriz INV  
-  gsl_matrix *INV= gsl_matrix_alloc(x,x);
-  gsl_permutation *b= gsl_permutation_alloc(x);
+  gsl_matrix *INV= gsl_matrix_alloc(3,3);
+  gsl_permutation *b= gsl_permutation_alloc(3);
   int *z= (int*) y;
   gsl_linalg_LU_decomp (PRO, b,z);
   gsl_linalg_LU_invert (PRO, b, INV);
@@ -76,7 +68,7 @@ int main(int argc, char **argv){
   gsl_matrix *A= gsl_matrix_alloc(x,y);
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, *INV, *XT, 0.0, *A);
   
-  gsl_matrix *BETA= gsl_matrix_alloc(x,1);
+  gsl_matrix *BETA= gsl_matrix_alloc(3,1);
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, *A, *Y, 0.0, *BETA);
   float beta1 =(float) gsl_matrix_get(BETA,0,0);
   float beta2 =(float) gsl_matrix_get(BETA,1,0);
@@ -89,24 +81,19 @@ int main(int argc, char **argv){
   return 0;
 }
 
-
-
-
 /*cargar el array*/
-double *loaddata(FILE* data, size_t x, size_t y){
+double *loaddata(FILE* data, int x, int y){
   int j;
   double *array;
   float a,b;
-
   
   if(!(array = malloc(sizeof(double)*x *y))){
     fprintf(stderr, "Problem with memory allocation");
     exit(1);
   }
-
   for(j=0;j<y; j++)
     {
-	fscanf(data, "%f %f \n",&a,&b);
+      fscanf(data, "%f %f \n",&a,&b);
 	array[x*j + 0]=(double) a; 
 	array[x*j + 1]=(double) b;
     }
@@ -123,10 +110,8 @@ FILE * opendata(char *filename){
 
 /* contar el numero de filas y columnas del archivo*/
 void countdata(FILE *data, int *n_x, int *n_y){
-  int x=0, y=0, test;
+  int y=0, test;
   char line;
-  float num;
-  char text[250];
   do{
     test = fgetc(data); 
     if(test=='\n'){
