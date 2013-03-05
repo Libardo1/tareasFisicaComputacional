@@ -18,12 +18,6 @@ int main(int argc, char **argv){
   open(argv[1]);
   count(data);
   
-  // dar memoria 
-  
-  malloc(x*y);
-
-  
-  /*
   //hacer la matriz provisional
   gsl_matrix *P=gsl_matrix_alloc(y,x);
   gsl_matrix_fscanf(data, P);
@@ -67,7 +61,6 @@ int main(int argc, char **argv){
     }
   }
   
-
   // calcular los valores propios de la matriz COV
   gsl_vector *eval=gsl_vector_alloc(x);
   gsl_matrix *evec=gsl_matrix_alloc(x,x);
@@ -78,16 +71,26 @@ int main(int argc, char **argv){
   
   gsl_eigen_symmv_sort(eval, evec, GSL_EIGEN_SORT_ABS_DESC);
 
+  //output
+  FILE *fileout;
+  fileout=fopen("autovectores_3D_data.dat", "w");  
 
   for(i=0;i<x;i++){
     double eval_i= gsl_vector_get(eval,i);
     gsl_vector_view evec_i = gsl_matrix_column (evec,i);
-
+    
     printf("eigenvalue %g\n", eval_i);
     printf("eigenvector = \n");
     gsl_vector_fprintf(stdout, &evec_i.vector, "%g");
+
+    for(j=0;j<(x-1);j++){
+      float evec_i_j= (float) gsl_vector_get(&evec_i.vector,j);
+      write(fileout,"%f ", evec_i_j);
+    }
+    write(fileout, "\n");
   }
-*/
+  close(fileout);
+  
   return 0;
 }
 
