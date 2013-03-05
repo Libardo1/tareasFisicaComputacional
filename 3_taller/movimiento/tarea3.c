@@ -27,7 +27,7 @@ int main(int argc, char **argv){
   gsl_matrix_get_col(Y, P,0);
   
   // operar los elementos de la matriz M para obtener la matriz X de datos
-  gsl_matrix *X= gsl_matrix_alloc(y,3);
+  gsl_matrix *X= gsl_matrix_alloc(y,x);
   for(i=0;i<3;i++){
     for(j=0;j<y;j++){
       if(i==0){
@@ -46,22 +46,41 @@ int main(int argc, char **argv){
   }
   
   // hacer la transpuesta de la matriz X, se crea XT
-  gsl_matrix *XT= gsl_matrix_alloc(3,y);
+  gsl_matrix *XT= gsl_matrix_alloc(x,y);
   gsl_matrix_transpose_memcpy(XT,X);
   
   // se multiplican las matrices creando una nueva matrix PRO
   gsl_matrix *PRO= gsl_matrix_alloc(y,y);
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, *X, *XT, 0.0, *PRO); 
+  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, *XT, *X, 0.0, *PRO); 
   /* gsl_cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, )*/
   
   // sacar la inversa de X*XT (PRO) creando matriz INV  
   gsl_matrix *INV= gsl_matrix_alloc(x,x);
-  gsl_permutation *b= gsl_permutatio_alloc(x);
-  
-  gsl_linalg_LU_decomp (PRO, p, &y);
-  gsl_linalg_LU_invert (PRO, p, INV);
+  gsl_permutation *b= gsl_permutation_alloc(x);
+  int *z=(int*) y;
+  gsl_linalg_LU_decomp (PRO, b,z);
+  gsl_linalg_LU_invert (PRO, b, INV);
 
-  gsl_permutation_free(b)
+  gsl_permutation_free(b);
+
+
+  
+
+  // hacer la multiplicacion 
+  gsl_matrix *A= gsl_matrix_alloc(x,y);
+  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, *INV, *XT, 0.0, *A);
+
+
+  gsl_matrix *BETA= gsl_matrix_alloc(x,1);
+  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, *A, *Y, 0.0, *BETA);
+  float beta1 =(float) gsl_matrix_get(BETA,0,0);
+  float beta2 =(float) gsl_matrix_get(BETA,1,0);
+  float beta3 =(float) gsl_matrix_get(BETA,2,0);
+  
+  FILE *fileout;
+  fileout=fopen("parametro_movimiento.dat","w");
+  write(fileout, "%f %f %f\n",beta1,beta2,beta3);
+  close(fileout);
   return 0;
 }
 
