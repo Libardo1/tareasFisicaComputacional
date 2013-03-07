@@ -139,13 +139,12 @@ def F(gm):
 ParF=[]
 for i in range (len( gmedia)):
     ParF.append( F(gmedia[i]))
-    print type (np.pi)
 
 #MODULO.6: Se hace el fit para la funcion senosoidal
 
 sin_theta=[]
 for item in thetas_experimento_1:
-    sin_theta.append(np.sin(item))
+    sin_theta.append(np.sin(float(item)))
 
 m= np.polyfit(sin_theta, ParF, 1)
 
@@ -154,7 +153,7 @@ m= np.polyfit(sin_theta, ParF, 1)
 def fesperado(theta):
     a=m[0]
     b=m[1]
-    fesp= a+(b*theta)
+    fesp= b+(a*theta)
     return fesp
 
 Yesp=[]
@@ -166,6 +165,6 @@ for i in range(len(sin_theta)):
     res= Yesp[i]- ParF[i]
     residuo.append(res)
 
-plt.plot(residuo)
+plt.plot(residuo, 'ro')
 plt.show()
 
