@@ -1,0 +1,171 @@
+# -----------------------------------------------------------------------------#
+# Tarea #4 Fisica Computacional                                                #
+# Nombre:Jorge Luis Mayorga                                                    #
+# Codigo:20111082                                                              #
+# -----------------------------------------------------------------------------#
+
+#Importar librerias 
+import sys,codecs,math
+import numpy as np
+import os
+from numpy import mean,cov,double,cumsum,dot,array,rank
+from pylab import plot,subplot,axis,stem,show,figure
+from numpy import linalg as LA
+import matplotlib.pyplot as plt
+
+def fittFile(namefile):
+    text=namefile.replace('\n','') 
+    data=np.loadtxt("hw4_data/"+text,comments='#')
+    t=data[:,0]
+    x=data[:,1]
+    y=data[:,2]
+    mx=np.polyfit(t,x,1)
+    my=np.polyfit(t,y,2)
+    vx0=mx[0]
+    x0=mx[1]
+    gtemp=my[0]
+    g=(2)*gtemp
+    vy0=my[1]
+    y0=my[2]
+    retorno=[x0,vx0,y0,vy0,g]
+    return retorno
+
+def write_file_fittParam(FittparamOut, namefile, paramFit0, paramFit1, paramFit2):
+    output=open(FittparamOut, "a")
+    mensaje=namefile+' '+str(paramFit0)+' '+str(paramFit1)+' '+str(paramFit2)+' '+"\n"
+    output.write(mensaje)
+
+def PCA(A):
+    sigma=cov(A)
+    eigenvalues, eigenvectors =LA.eig(sigma)
+    return eigenvectors, eigenvalues
+
+#MODULO.0:Leer los nombres de los archivos en la lista :list_names
+names_files=open('filelist.txt','r')
+list_names=names_files.readlines()
+names_files.close()
+
+#MODULO.1:Fiting de los parametros de cada archivo de los 1800
+paramFit = []
+G=[]
+for i in range(3):
+    paramFit.append([])
+    for j in range(len(list_names)):
+        paramFit[i].append(None)  
+
+for j in range(len(list_names)):
+    paramFitemp=fittFile(list_names[j]) 
+    paramFit[0][j]=paramFitemp[1]#Velocidad en x
+    paramFit[1][j]=paramFitemp[3]#Velocidad en y
+    paramFit[2][j]=paramFitemp[4]#Gravedad g
+    G.append(paramFitemp[4])
+    write_file_fittParam("datos.dat" , list_names[j] ,paramFit[0][j],paramFit[1][j],paramFit[2][j] )
+
+#MODULO.2:PCA para comprobar que la g no varia segun vs
+eigenvectorsPCA, eigenvaluesPCA=PCA(paramFit)
+eigen=open("eigen.dat", "w")
+mess=str(eigenvaluesPCA[0])+" "+str(eigenvaluesPCA[1])+" "+str(eigenvaluesPCA[2])+"\n"
+mess2= str(eigenvectorsPCA[0]) +"\n" +str(eigenvectorsPCA[1]) +"\n"+str(eigenvectorsPCA[2])+"\n"
+eigen.write(mess+ mess2)
+
+#MODULO.3:Generar lista con el valor promedio de los 6 exp de g para cada theta
+intentos1=list_names[0:299]
+intentos2=list_names[300:599]
+intentos3=list_names[600:899]
+intentos4=list_names[900:1199]
+intentos5=list_names[1200:1499]
+intentos6=list_names[1500:1799]
+
+G1=G[0:299]
+G2=G[300:599]
+G3=G[600:899]
+G4=G[900:1199]
+G5=G[1200:1499]
+G6=G[1500:1799]
+
+thetas_experimento_1=[]
+thetas_experimento_2=[]
+thetas_experimento_3=[]
+thetas_experimento_4=[]
+thetas_experimento_5=[]
+thetas_experimento_6=[]
+
+gmedia=[]
+
+for i in range(299):
+    
+    temp1=intentos1[i].replace('experimentID_0_theta_','')
+    temp1=temp1.replace('.dat','')
+    thetas_experimento_1.append(temp1)
+    gmedia_exp1=G1[i]
+    
+    temp2=intentos2[i].replace('experimentID_1_theta_','')
+    temp2=temp2.replace('.dat','')
+    thetas_experimento_2.append(temp2)
+    gmedia_exp2=G2[i]
+    
+    temp3=intentos3[i].replace('experimentID_2_theta_','')
+    temp3=temp3.replace('.dat','')
+    thetas_experimento_3.append(temp3)
+    gmedia_exp3=G3[i]
+    
+    temp4=intentos4[i].replace('experimentID_3_theta_','')
+    temp4=temp4.replace('.dat','')
+    thetas_experimento_4.append(temp4)
+    gmedia_exp4=G4[i]
+    
+    temp5=intentos5[i].replace('experimentID_4_theta_','')
+    temp5=temp5.replace('.dat','')
+    thetas_experimento_5.append(temp5)
+    gmedia_exp5=G5[i]
+    
+    temp6=intentos6[i].replace('experimentID_5_theta_','')
+    temp6=temp6.replace('.dat','')
+    thetas_experimento_6.append(temp6)
+    gmedia_exp6=G6[i]
+
+    gmedia.append((gmedia_exp1+gmedia_exp2+gmedia_exp3+gmedia_exp4+gmedia_exp5+gmedia_exp6)/6)
+
+#MODULO.4:Graficar theta=x gmedia(1 to 6 exp)=y
+
+plt.plot(thetas_experimento_1,gmedia,'ro')
+plt.show()
+
+#MODULO.5: Se hace una lista de gmedia parametrizada por F
+
+def F(gm):
+    return (1.0 - (gm/9.8))
+
+ParF=[]
+for i in range (len( gmedia)):
+    ParF.append( F(gmedia[i]))
+    print type (np.pi)
+
+#MODULO.6: Se hace el fit para la funcion senosoidal
+
+sin_theta=[]
+for item in thetas_experimento_1:
+    sin_theta.append(np.sin(item))
+
+m= np.polyfit(sin_theta, ParF, 1)
+
+# MODULO.7: Preparar el vector de residuos para el mejor fit 
+
+def fesperado(theta):
+    a=m[0]
+    b=m[1]
+    fesp= a+(b*theta)
+    return fesp
+
+Yesp=[]
+for item in sin_theta:
+    Yesp.append(fesperado(item))
+
+residuo=[]
+for i in range(len(sin_theta)):
+    res= Yesp[i]- ParF[i]
+    residuo.append(res)
+
+plt.plot(residuo)
+plt.show()
+
