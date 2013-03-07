@@ -7,38 +7,39 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
 
-void open(char *filename);
-void count(FILE *data);
+FILE* opendata(char *filename);
+void countdata(FILE *data, int*nx, int *ny);
+double *loaddata(FILE* data, int x, int y);
 
 int main(int argc, char **argv){
   
   FILE *data;
-  size_t x,y,i,j,a;
+  double *matriz;
+  int x,y,i,j,a;
   int m3=0,m1=0,m2=0;
-  open(argv[1]);
-  count(data);
+  data=opendata(argv[1]);
+  countdata(data,&x,&y);
   
   //hacer la matriz provisional
-  gsl_matrix *P=gsl_matrix_alloc(y,x);
-  gsl_matrix_fscanf(data, P);
-
-  // sacar la media para cada dimension 
+  matriz = loaddata(data,x,y);
+  gsl_matrix_view P =gsl_matrix_view_array(matriz,y,x);
+  // sacar la media para cada dimension
   gsl_vector *m= gsl_vector_alloc(3);
   for(i=0;i<x;i++){
     for(j=0;j<y;j++){
       if(i==0)
 	{
-	  m1+= gsl_matrix_get(P,j,i);
+	  m1+= gsl_matrix_get(&P.matrix,j,i);
 	}
       if(i==1)
 	{
-	  m2+= gsl_matrix_get(P,j,i); 
+	  m2+= gsl_matrix_get(&P.matrix,j,i);
 	}
       if(i==2)
 	{
-	  m3+= gsl_matrix_get(P,j,i);
+	  m3+= gsl_matrix_get(&P.matrix,j,i);
 	}
-      m1/= y;  m2/= y;  m3/=y;
+      m1/= y; m2/= y; m3/=y;
     }
   }
   gsl_vector_set(m,0,m1);
@@ -51,8 +52,8 @@ int main(int argc, char **argv){
     for(a=0;a<x;a++){
       double element=0;
       for(j=0;j<y;j++){
-	double ei= gsl_matrix_get(P,j,i) - gsl_vector_get(m,i);
-	double ea= gsl_matrix_get(P,j,a) - gsl_vector_get(m,a);
+	double ei= gsl_matrix_get(&P.matrix,j,i) - gsl_vector_get(m,i);
+	double ea= gsl_matrix_get(&P.matrix,j,a) - gsl_vector_get(m,a);
 	double ee=ei*ea;
 	element+=ee;
       }
@@ -73,34 +74,60 @@ int main(int argc, char **argv){
 
   //output
   FILE *fileout;
-  fileout=fopen("autovectores_3D_data.dat", "w");  
+  fileout=fopen("autovectores_3D_data.dat", "w");
 
-  for(i=0;i<x;i++){
+  for(i=0;i<x-1;i++){
     double eval_i= gsl_vector_get(eval,i);
     gsl_vector_view evec_i = gsl_matrix_column (evec,i);
     
     printf("eigenvalue %g\n", eval_i);
     printf("eigenvector = \n");
     gsl_vector_fprintf(stdout, &evec_i.vector, "%g");
-
-    for(j=0;j<(x-1);j++){
-      float evec_i_j= (float) gsl_vector_get(&evec_i.vector,j);
-      write(fileout,"%f ", evec_i_j);
-    }
-    write(fileout, "\n");
-  }
+    
+    float evec_i_0= (float) gsl_vector_get(&evec_i.vector,0); 
+    float evec_i_1= (float) gsl_vector_get(&evec_i.vector,1);
+    float evec_i_2= (float) gsl_vector_get(&evec_i.vector,2);
+    fprintf(fileout,"%f %f %f\n", evec_i_0, evec_i_1, evec_i_2); 
+    
+  } 
   close(fileout);
-  
   return 0;
 }
 
-void open(char *filename){  FILE *data;  data =fopen(filename, "r");  close(filename);}
-
-void count(FILE *data){
-  int x=0, y=0, test;  char line;
-  do{test= fscanf(data, "/n", &line); 
-    if(test!=EOF){      y++;    }
-  }while(test!=EOF);  
-  x=3;
+FILE* opendata(char *filename)
+{
+  FILE *data; 
+  data =fopen(filename, "r"); 
+  close(filename);
+  return data;
 }
 
+void countdata(FILE *data,int*nx, int *ny){
+  int y=0, test; char line;
+  do{
+    test= fgetc(data);
+    if(test=='\n'){ y++; }
+  }while(test!=EOF);
+ *nx=3;
+ *ny=y;
+}
+
+/*cargar el array*/
+double *loaddata(FILE* data, int x, int y){
+  int j;
+  double *array;
+  float a,b,c;
+  
+  if(!(array = malloc(sizeof(double)*x *y))){
+    fprintf(stderr, "Problem with memory allocation");
+    exit(1);
+  }
+  for(j=0;j<y; j++)
+    {
+      fscanf(data, "%f %f %f\n",&a,&b, &c);
+	array[x*j + 0]=(double) a; 
+	array[x*j + 1]=(double) b;
+	array[x*j + 2]=(double) c;
+    }
+  return array;
+}
